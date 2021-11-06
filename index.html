@@ -14,9 +14,24 @@
 
 
 <div class="container-fluid mt-3" id="app">
-    <input type="text" class="form-control" v-model="criterioDeBusqueda"
+    <input type="text" class="form-control" v-model="criterioDeBusqueda" @input="campoCritBusDirty($event)"
         placeholder="Ingresar un criterio de busqueda...">
     <br>
+    <h2 v-if="dirtyCri && !esFiltroValido(criterioDeBusqueda)" class="alert alert-warning">
+        El filtro de Criterio de Busqueda debe contener al menos 3 caracteres.
+    </h2>
+    <input type="text" class="form-control" v-model="nombreApellidoDeBusqueda" @input="campoNomApeDirty($event)"
+        placeholder="Ingresar un nombre o apellido de búsqueda...">
+    <br>
+    <h2 v-if="dirtyNomApe && !esFiltroValido(nombreApellidoDeBusqueda)" class="alert alert-warning">
+        El filtro de Nombre y Apellido debe contener al menos 3 caracteres.
+    </h2>
+    <input type="number" class="form-control" v-model="dniDeBusqueda" @input="campoDniDirty($event)"
+        placeholder="Ingresar un DNI de busqueda...">
+    <br>
+    <h2 v-if="dirtyDni && !esFiltroValido(dniDeBusqueda)" class="alert alert-warning">
+        El filtro de DNI debe contener al menos 3 caracteres.
+    </h2>
     <div class="card-deck m-0">
         <div class="row">
             <div class="col" v-for="persona in personasFiltradas">
@@ -39,7 +54,12 @@
     new Vue({
         el: '#app',
         data: {
+            dirtyCri: false,
+            dirtyNomApe: false,
+            dirtyDni: false,
             criterioDeBusqueda: '',
+            nombreApellidoDeBusqueda: '',
+            dniDeBusqueda: '',
             //Aquí, en este array es donde tienen que agregar su información
             personas: [
                 {
@@ -167,15 +187,46 @@
         },
         computed: {
             personasFiltradas() {
-                return this.personas.filter((persona) => {
-                    let registroCompleto = `${persona.nombre} ${persona.apellido} ${persona.dni} ${persona.correo}`
-                    return registroCompleto.toLowerCase().includes(this.criterioDeBusqueda.toLowerCase())
-                });
+                //Si alguno de los tres filtros esta modificado pero no tiene el mínimo de 3 caracteres devuelvo la lista completa 
+                if((this.criterioDeBusqueda.length < 3 && this.criterioDeBusqueda != '') 
+                    || (this.nombreApellidoDeBusqueda.length < 3 && this.nombreApellidoDeBusqueda != '')
+                    || (this.nombreApellidoDeBusqueda.length < 3 && this.nombreApellidoDeBusqueda != '')) 
+                    return this.personas
+                else
+                    return this.personas
+                            .filter(persona =>{
+                                return !this.dniDeBusqueda || persona.dni.includes(this.dniDeBusqueda)
+                            })
+                            .filter(persona =>{
+                                return !this.nombreApellidoDeBusqueda || this.getNombreCompleto(persona).toLowerCase().includes(this.nombreApellidoDeBusqueda.toLowerCase())
+                            })
+                            .filter((persona) => {
+                                let registroCompleto = `${persona.nombre} ${persona.apellido} ${persona.dni} ${persona.correo}`
+                                return registroCompleto.toLowerCase().includes(this.criterioDeBusqueda.toLowerCase())
+                            });
             }
         },
         methods: {
             getNombreCompleto(persona) {
                 return `${persona.nombre} ${persona.apellido}`
+            },
+            esFiltroValido(filtro) {
+                return filtro && filtro != '' && filtro.length > 2
+            },
+            campoCritBusDirty(event) {
+                let datoIngresado = event.target.value
+
+                this.dirtyCri = this.dirtyCri || (datoIngresado && datoIngresado.length > 0) 
+            },
+            campoNomApeDirty(event) {
+                let datoIngresado = event.target.value
+
+                this.dirtyNomApe = this.dirtyNomApe || (datoIngresado && datoIngresado.length > 0) 
+            },
+            campoDniDirty(event) {
+                let datoIngresado = event.target.value
+
+                this.dirtyDni = this.dirtyDni || (datoIngresado && datoIngresado.length > 0) 
             }
         }
     });
